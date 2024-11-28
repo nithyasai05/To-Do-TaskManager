@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>TO-DO LIST</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css"
+    />
+    <style>
+      body {
+        display: flex;
+        justify-content: center;
+        position: relative;
+        top: 100px;
+        background-color: #2e363e;
+      }
+      .container {
+        /* border: 3px solid black; */
+        border-radius: 10px;
+        width: 700px;
+        padding: 20px;
+        box-shadow: 0px 0px 20px 2px black;
+      }
+      h1 {
+        text-align: center;
+        color: white;
+      }
+      header {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        border: 2px solid grey;
+        border-radius: 5px;
+        padding: 15px;
+      }
+      #title {
+        width: 30%;
+        height: 40px;
+        text-align: center;
+        border: 2px solid lightgrey;
+        border-radius: 40px;
+      }
+      #description {
+        width: 60%;
+        height: 40px;
+        overflow: hidden;
+        text-align: center;
+        border: 2px solid lightgrey;
+        border-radius: 40px;
+      }
+
+      .requirements {
+        display: flex;
+        align-items: center;
+        justify-content: space-around;
+        border: 2px solid grey;
+        border-radius: 5px;
+        padding: 15px;
+      }
+      #priority,
+      #category,
+      #date {
+        width: 30%;
+        height: 40px;
+        text-align: center;
+        border: 2px solid lightgrey;
+        border-radius: 40px;
+      }
+      #submittask {
+        width: 100px;
+        height: 40px;
+        text-align: center;
+        border: 2px solid lightgrey;
+        float: right;
+        border-radius: 40px;
+      }
+
+      .both {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 5px;
+        line-height: 10px;
+      }
+      .both2 {
+        text-decoration: line-through;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+      }
+
+      #tasks li {
+        margin-bottom: 20px;
+        padding: 5px;
+        border: 5px solid lightgrey;
+      }
+      .buttons {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+      }
+      .complete-btn {
+        padding: 4px 7px;
+        width: 100px;
+        height: 40px;
+        color: white;
+        border: none;
+        cursor: pointer;
+        background-color: green;
+      }
+      .remove-btn {
+        cursor: pointer;
+        color: white;
+        font-size: 20px;
+      }
+
+      h3 {
+        text-align: center;
+        color: white;
+      }
+      .undo-btn {
+        display: none;
+        padding: 4px 7px;
+        width: 100px;
+        height: 40px;
+        background-color: #616a6b;
+        color: white;
+        border: none;
+        cursor: pointer;
+      }
+      p {
+        color: #ffffff;
+      }
+      strong {
+        color: black;
+        font-size: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <article class="container">
+      <h1>Task Manager</h1>
+      <header>
+        <input type="text" placeholder="Add title" id="title" required />
+        <br />
+        <input
+          type="text"
+          placeholder="Add Description"
+          id="description"
+          required
+        />
+      </header>
+      <br />
+      <section class="requirements">
+        <select name="priority" id="priority" required>
+          <option disabled selected>Select Priority</option>
+          <option>High</option>
+          <option>Medium</option>
+          <option>Low</option>
+        </select>
+        <select name="category" id="category" required>
+          <option disabled selected value="Not Selected">
+            Select Category
+          </option>
+          <option>Work</option>
+          <option>Personal</option>
+        </select>
+        <input type="date" id="date" required />
+      </section>
+      <br />
+      <button id="submittask">Submit Task</button>
+
+      <section>
+        <h3>Tasks</h3>
+        <ul id="tasks"></ul>
+      </section>
+    </article>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const submit = document.getElementById("submittask");
+        const task = document.getElementById("tasks");
+
+        submit.addEventListener("click", () => {
+          const title = document.getElementById("title").value;
+          const description = document.getElementById("description").value;
+          const priority = document.getElementById("priority").value;
+          const category = document.getElementById("category").value;
+          const deadline = document.getElementById("date").value;
+
+          
+          // if (!title || !description || !priority || !category || !deadline) {
+          //   alert("Please fill in all fields and select appropriate options.");
+          //   return;
+          // }
+          
+
+          // Get task border color based on priority
+          const borderColor = getBorderColor(priority);
+
+          // Create task item
+          const taskItem = createTaskItem(
+            title,
+            category,
+            description,
+            deadline,
+            borderColor
+          );
+
+          changeBgByDeadline(deadline, taskItem);
+
+          task.appendChild(taskItem);
+
+          // Reset form fields
+          resetForm();
+
+          // Save task
+          saveTask();
+
+          // Add task event listeners for complete, undo, and remove actions
+          buttonClickChanges(taskItem);
+        });
+
+        // Function to get the border color based on priority
+        function getBorderColor(priority) {
+          switch (priority) {
+            case "High":
+              return "10px solid red";
+            case "Medium":
+              return "10px solid orange";
+            case "Low":
+              return "10px solid green";
+            default:
+              return "5px solid lightgrey";
+          }
+        }
+
+        function changeBgByDeadline(deadline, taskItem) {
+          // Deadline notification: change color if deadline is within 24 hours
+          const deadlineDate = new Date(deadline);
+          const currentDate = new Date();
+          const timeDiff = deadlineDate - currentDate;
+          const hoursDiff = timeDiff / (1000 * 60 * 60);
+
+          if (hoursDiff <= 24 && hoursDiff > 0) {
+            taskItem.style.backgroundColor = "#b7950b"; // Light yellow
+          } else if (hoursDiff <= 0) {
+            taskItem.style.backgroundColor = "#cb4335"; // Light red
+          } else if (deadline === "") {
+            taskItem.style.backgroundColor = "#707b7c"; // Not entered
+          } else {
+            taskItem.style.backgroundColor = "#148f77"; // Green
+          }
+        }
+
+        // Function to create task item
+        function createTaskItem(
+          title,
+          category,
+          description,
+          deadline,
+          borderColor
+        ) {
+          const taskItem = document.createElement("li");
+          taskItem.style.borderLeft = borderColor;
+          taskItem.style.borderRight = borderColor;
+          taskItem.innerHTML = `
+            <div class="both">
+              <div class="underboth">
+                <p><strong style="font-size: 20px; color:blue">${title}</strong></p>
+                <p>${description}</p>
+                <p><strong>Category:</strong> ${category}</p>
+                <p><strong>Deadline:</strong> ${deadline}</p>
+              </div>
+              <div class="buttons">
+                <button class="complete-btn">Complete</button>
+                <button class="undo-btn" style="display:none;">Undo</button>
+                <i class="fa-solid fa-trash-can remove-btn"></i>
+              </div>
+            </div>
+          `;
+          return taskItem;
+        }
+
+        // Function to reset form fields
+        function resetForm() {
+          document.getElementById("title").value = "";
+          document.getElementById("description").value = "";
+          document.getElementById("priority").selectedIndex = 0;
+          document.getElementById("category").selectedIndex = 0;
+          document.getElementById("date").value = "";
+        }
+
+        // Function to add event listeners to task (complete, undo, remove)
+        function buttonClickChanges(taskItem) {
+          const complete = taskItem.querySelector(".complete-btn");
+          const undo = taskItem.querySelector(".undo-btn");
+          const under = taskItem.querySelector(".underboth");
+          const remove = taskItem.querySelector(".remove-btn");
+
+          complete.addEventListener("click", () =>
+            completeTask(complete, undo, under)
+          );
+          undo.addEventListener("click", () => undoTask(complete, undo, under));
+          remove.addEventListener("click", () => removeTask(taskItem));
+        }
+
+        // Function to handle task completion
+        function completeTask(complete, undo, under) {
+          under.classList.add("both2");
+          complete.style.display = "none";
+          undo.style.display = "block";
+          saveTask();
+        }
+
+        // Function to handle task undo
+        function undoTask(complete, undo, under) {
+          under.classList.remove("both2");
+          undo.style.display = "none";
+          complete.style.display = "block";
+          saveTask();
+        }
+
+        // Function to remove task
+        function removeTask(taskItem) {
+          taskItem.remove();
+          saveTask();
+        }
+
+        // Function to save tasks to localStorage
+        function saveTask() {
+          localStorage.setItem("tasks", task.innerHTML);
+        }
+
+        // Function to load tasks from localStorage
+        function loadTask() {
+          const savedTasks = localStorage.getItem("tasks");
+          if (savedTasks) {
+            task.innerHTML = savedTasks;
+
+            // Re-attach event listeners to loaded tasks
+            const loadedTasks = task.querySelectorAll("li");
+            loadedTasks.forEach((taskItem) => {
+              buttonClickChanges(taskItem);
+            });
+          }
+        }
+
+        // Load tasks on page load
+        loadTask();
+      });
+    </script>
+  </body>
+</html>
